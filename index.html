@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Nebula Workspace · Environment Activation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 30%, #0b1120, #030712);
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: floatOrb 18s infinite alternate ease-in-out;
+            z-index: 0;
+        }
+        .orb-1 { width: 40vmax; height: 40vmax; background: #3b82f6; top: -15%; left: -20%; animation-duration: 22s; }
+        .orb-2 { width: 35vmax; height: 35vmax; background: #a855f7; bottom: -10%; right: -15%; animation-duration: 25s; animation-delay: -5s; }
+        .orb-3 { width: 25vmax; height: 25vmax; background: #06b6d4; top: 40%; left: 60%; animation-duration: 19s; opacity: 0.3; }
+        
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+            100% { transform: translate(5%, 8%) scale(1.2); opacity: 0.6; }
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .glass-card {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 520px;
+            background: rgba(15, 25, 45, 0.55);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.4), 0 0 0 0.5px rgba(255, 255, 255, 0.05);
+            padding: 2rem 2rem 2.2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeSlideUp 0.7s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        @keyframes fadeSlideUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .view { transition: opacity 0.5s ease, visibility 0.5s; }
+        .view-hidden { display: none; visibility: hidden; opacity: 0; }
+        .view-visible { display: block; visibility: visible; opacity: 1; }
+
+        .activation-header { text-align: center; margin-bottom: 1.8rem; }
+        .activation-header h1 {
+            font-size: 2rem; font-weight: 700;
+            background: linear-gradient(135deg, #F0F4FF, #c7d2fe);
+            -webkit-background-clip: text; color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .greeting { font-size: 0.9rem; color: #9ca3af; margin-top: 0.4rem; letter-spacing: 0.2px; }
+        
+        .progress-section { margin: 1.8rem 0 1.5rem; }
+        .progress-bar-bg {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 100px; height: 6px; overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .progress-fill {
+            width: 0%; height: 100%;
+            background: linear-gradient(90deg, #60a5fa, #c084fc);
+            border-radius: 100px;
+            transition: width 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            box-shadow: 0 0 8px #a78bfa;
+        }
+        .percentage { text-align: right; font-size: 0.75rem; font-weight: 500; color: #cbd5e1; margin-top: 8px; letter-spacing: 0.5px; }
+
+        .steps-list { margin: 1.8rem 0 1rem; display: flex; flex-direction: column; gap: 0.9rem; text-align: left; }
+        .step-item {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(255,255,255,0.02);
+            padding: 10px 16px; border-radius: 12px;
+            transition: all 0.2s;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        .checkbox-container {
+            width: 22px; height: 22px; border-radius: 6px;
+            border: 2px solid rgba(148, 163, 184, 0.4);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+        .step-name { flex: 1; font-size: 0.9rem; font-weight: 500; color: #94a3b8; transition: all 0.3s; }
+        
+        .step-item.active { background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.3); }
+        .step-item.active .checkbox-container { border-color: #60a5fa; box-shadow: 0 0 10px rgba(96,165,250,0.3); }
+        .step-item.active .step-name { color: #e2e8f0; }
+        .step-item.active .checkbox-container::after {
+            content: ''; width: 8px; height: 8px; background: #60a5fa;
+            border-radius: 2px; display: block; animation: pulse-dot 1s infinite alternate;
+        }
+        @keyframes pulse-dot { from { opacity: 0.5; transform: scale(0.8); } to { opacity: 1; transform: scale(1.1); } }
+        
+        .step-item.completed { background: rgba(16, 185, 129, 0.05); border-color: rgba(16, 185, 129, 0.2); }
+        .step-item.completed .checkbox-container { background: #10b98120; border-color: #34d399; }
+        .step-item.completed .step-name { color: #cbd5e1; }
+        .step-item.completed .checkbox-container::after {
+            content: '✓'; color: #10b981; font-size: 14px; font-weight: bold;
+        }
+
+        .status-subtext { text-align: center; font-size: 0.75rem; color: #7e8ba3; margin-top: 16px; letter-spacing: 0.4px; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 14px; }
+
+        .ready-container { text-align: center; }
+        .success-icon {
+            width: 80px; height: 80px; background: linear-gradient(145deg, #10b98120, #05966920);
+            border-radius: 100px; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.2rem; backdrop-filter: blur(4px);
+            animation: bounceCheck 0.6s cubic-bezier(0.34, 1.2, 0.64, 1);
+        }
+        @keyframes bounceCheck { 0% { transform: scale(0.2); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+        .check-svg { width: 48px; height: 48px; stroke: #34d399; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-dasharray: 70; stroke-dashoffset: 70; animation: drawCheck 0.5s ease forwards 0.2s; }
+        @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+        
+        .ready-title {
+            font-size: 2rem; font-weight: 700;
+            background: linear-gradient(to right, #e0f2fe, #a5f3fc);
+            -webkit-background-clip: text; color: transparent; margin-bottom: 0.5rem;
+        }
+        .welcome-message { font-size: 1rem; color: #cbd5e6; margin-bottom: 1.5rem; }
+        .env-specs {
+            background: rgba(0, 0, 0, 0.35); border-radius: 1.5rem; padding: 1rem 1.2rem;
+            margin: 1.4rem 0 1.6rem; text-align: left; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .spec-row { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); }
+        .spec-row:last-child { border-bottom: none; }
+        .spec-label { color: #94a3b8; font-weight: 500; }
+        .spec-value { color: #e2e8f0; font-family: monospace; font-weight: 500; }
+        .reset-note { font-size: 0.7rem; color: #5b6e8c; margin-top: 18px; }
+
+        #confetti-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
+
+        /* Mobile Aesthetics */
+        @media (max-width: 600px) {
+            body { padding: 1rem; }
+            .glass-card { padding: 1.5rem 1.2rem; border-radius: 1.5rem; }
+            .ready-title { font-size: 1.4rem; padding-top: 0.5rem; }
+            .success-icon { width: 60px; height: 60px; margin-bottom: 0.8rem; }
+            .check-svg { width: 32px; height: 32px; }
+            .welcome-message { font-size: 0.85rem; margin-bottom: 1rem; }
+            .env-specs { padding: 0.8rem 1rem; margin: 1rem 0; border-radius: 1rem; }
+            /* Stack the techy spec rows vertically on small screens */
+            .spec-row { flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 0; }
+            .spec-label { font-size: 0.7rem !important; }
+            .spec-value { font-size: 0.85rem; padding-left: 2px; }
+            .step-item { padding: 10px 12px; gap: 10px; }
+            .step-name { font-size: 0.8rem; }
+            .checkbox-container { width: 18px; height: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div><div class="grid-overlay"></div>
+
+    <div class="glass-card" id="appCard">
+        <div id="loadingView" class="view view-visible">
+            <div class="activation-header">
+                <h1>✦ WORKSPACE ACTIVATION</h1>
+                <div class="greeting">secure environment · isolated cloud pod</div>
+            </div>
+            <div class="progress-section">
+                <div class="progress-bar-bg"><div class="progress-fill" id="progressFill"></div></div>
+                <div class="percentage" id="percentageLabel">0%</div>
+            </div>
+            <div class="steps-list" id="stepsContainer"></div>
+            <div class="status-subtext" id="liveStatusMsg"><span>⚡ Initializing connection...</span></div>
+        </div>
+
+        <div id="readyView" class="view view-hidden">
+            <div class="ready-container">
+                <div class="success-icon"><svg class="check-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 13L9 17L19 7" stroke="currentColor" stroke-width="3" fill="none"/></svg></div>
+                <div class="ready-title">ENVIRONMENT READY</div>
+                <div class="welcome-message">Welcome back, <strong style="color:#a78bfa">Ishaan</strong> · workspace is live.</div>
+                <div class="env-specs">
+                    <div class="spec-row"><span class="spec-label" style="color: #60a5fa; letter-spacing: 1px; font-size: 0.75rem;">[SYS_CORE]</span><span class="spec-value">Antigravity IDE Linked</span></div>
+                    <div class="spec-row"><span class="spec-label" style="color: #60a5fa; letter-spacing: 1px; font-size: 0.75rem;">[WORKSPACE]</span><span class="spec-value">GitHub Active</span></div>
+                    <div class="spec-row"><span class="spec-label" style="color: #c084fc; letter-spacing: 1px; font-size: 0.75rem;">[NEURAL_NET]</span><span class="spec-value">GPT + Claude Synced</span></div>
+                    <div class="spec-row"><span class="spec-label" style="color: #60a5fa; letter-spacing: 1px; font-size: 0.75rem;">[ACOUSTIC]</span><span class="spec-value">Spotify Audio Bound</span></div>
+                    <div class="spec-row"><span class="spec-label" style="color: #60a5fa; letter-spacing: 1px; font-size: 0.75rem;">[DIAGNOSTICS]</span><span class="spec-value" style="color: #34d399; text-shadow: 0 0 10px rgba(52,211,153,0.5);">Optimal</span></div>
+                </div>
+                <div class="reset-note">✨ environment snapshot ready · all systems nominal</div>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <script>
+        (function() {
+            const steps = [
+                { name: "Waking up system core...", key: 0 },
+                { name: "Launching ChatGPT interface", key: 1 },
+                { name: "Connecting Claude AI", key: 2 },
+                { name: "Accessing GitHub repository", key: 3 },
+                { name: "Initializing Google Search", key: 4 },
+                { name: "Starting Spotify ambient audio", key: 5 },
+                { name: "Activating Antigravity workspace", key: 6 },
+                { name: "Voice synthesis & system ready", key: 7 }
+            ];
+
+            const progressFill = document.getElementById('progressFill');
+            const percentageLabel = document.getElementById('percentageLabel');
+            const stepsContainer = document.getElementById('stepsContainer');
+            const liveStatusMsgSpan = document.querySelector('#liveStatusMsg span');
+            const loadingView = document.getElementById('loadingView');
+            const readyView = document.getElementById('readyView');
+
+            // Confetti System
+            const canvas = document.getElementById('confetti-canvas');
+            let ctx = canvas.getContext('2d');
+            let confettiActive = false; let particles = []; let animationId = null;
+
+            function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+            window.addEventListener('resize', () => { resizeCanvas(); });
+            resizeCanvas();
+
+            function burstConfetti() {
+                if (confettiActive) return;
+                confettiActive = true; resizeCanvas(); particles = [];
+                const colors = ['#60a5fa', '#c084fc', '#34d399', '#f472b6', '#fbbf24'];
+                for (let i = 0; i < 100; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width, y: canvas.height + 10,
+                        size: Math.random() * 6 + 3, speedX: (Math.random() - 0.5) * 2.5,
+                        speedY: Math.random() * -8 - 5, color: colors[Math.floor(Math.random() * colors.length)],
+                        rotation: Math.random() * 360, spin: (Math.random() - 0.5) * 12,
+                        gravity: 0.25, opacity: 0.9
+                    });
+                }
+                function updateConfetti() {
+                    if (!confettiActive) return;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    for (let p of particles) {
+                        p.x += p.speedX; p.y += p.speedY; p.speedY += p.gravity; p.rotation += p.spin;
+                        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rotation * Math.PI / 180);
+                        ctx.globalAlpha = p.opacity * (1 - (p.y / canvas.height) * 0.6);
+                        ctx.fillStyle = p.color; ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size/1.5);
+                        ctx.restore();
+                    }
+                    particles = particles.filter(p => p.y < canvas.height + 200 && p.y > -150 && p.x > -150 && p.x < canvas.width + 150);
+                    if (particles.length === 0) { confettiActive = false; return; }
+                    animationId = requestAnimationFrame(updateConfetti);
+                }
+                updateConfetti();
+                setTimeout(() => { confettiActive = false; ctx.clearRect(0,0,canvas.width,canvas.height); }, 3500);
+            }
+
+            function buildStepsUI() {
+                stepsContainer.innerHTML = '';
+                steps.forEach((step, idx) => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'step-item'; stepDiv.id = `step-${idx}`;
+                    const cbContainer = document.createElement('div');
+                    cbContainer.className = 'checkbox-container';
+                    const nameSpan = document.createElement('div');
+                    nameSpan.className = 'step-name'; nameSpan.innerText = step.name;
+                    stepDiv.appendChild(cbContainer); stepDiv.appendChild(nameSpan);
+                    stepsContainer.appendChild(stepDiv);
+                });
+            }
+
+            function updateStepUI(activeIdx) {
+                for (let i = 0; i < steps.length; i++) {
+                    const stepElement = document.getElementById(`step-${i}`);
+                    if (!stepElement) continue;   
+                    if (i < activeIdx) {
+                        stepElement.classList.add('completed'); stepElement.classList.remove('active');
+                    } else if (i === activeIdx) {
+                        stepElement.classList.add('active'); stepElement.classList.remove('completed');
+                    } else {
+                        stepElement.classList.remove('active', 'completed');
+                    }
+                }
+            }
+
+            function showReadyEnvironment() {
+                loadingView.classList.replace('view-visible', 'view-hidden');
+                readyView.classList.replace('view-hidden', 'view-visible');
+                burstConfetti();
+            }
+
+            function connectStream() {
+                updateStepUI(0);
+                const source = new EventSource('/stream');
+                
+                source.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    updateStepUI(data.step);
+                    liveStatusMsgSpan.innerHTML = "⚡ " + data.status;
+                    
+                    const percent = Math.floor((data.step / (steps.length - 1)) * 100);
+                    progressFill.style.width = `${percent}%`;
+                    percentageLabel.innerText = `${percent}%`;
+                };
+
+                source.addEventListener('close', function(event) {
+                    source.close();
+                    updateStepUI(steps.length);
+                    setTimeout(() => showReadyEnvironment(), 600);
+                });
+                
+                source.onerror = function(event) {
+                    source.close();
+                };
+            }
+
+            buildStepsUI();
+            setTimeout(connectStream, 300);
+        })();
+    </script>
+</body>
+</html>
